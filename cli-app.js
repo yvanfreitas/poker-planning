@@ -10,7 +10,7 @@ import ClientEvents from './src/cli-app/client-events.js';
 global.player = null;
 global.game = null;
 global.gameRender = new GameRender();
-global.socket = io('http://localhost:3000');
+global.socket = io('https://poker-planning-server.adaptable.app/');
 global.clientEvents = new ClientEvents();
 
 async function init() {
