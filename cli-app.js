@@ -12,6 +12,8 @@ global.game = null;
 global.gameRender = new GameRender();
 global.socket = io('https://poker-planning-server.adaptable.app/');
 global.clientEvents = new ClientEvents();
+global.currentScreen = null;
+global.connectionLoss = false;
 
 async function init() {
   while (true) {
@@ -23,5 +25,7 @@ async function init() {
 }
 
 socket.on('connect', () => {
-  init();
+  if (currentScreen == null) init();
+  if (game?.state?.id) clientEvents.emitRequestState(game.state.id);
+  clientEvents.processQueue();
 });
