@@ -7,8 +7,9 @@ export async function welcomeMenu() {
   if (player) return;
   await gameRender.render(game);
   console.log('Welcome to Planning Poker CLI Application.');
-  const answers = await inquirer.prompt({
-    name: 'player_name',
+
+  const playerPrompt = await inquirer.prompt({
+    name: 'name',
     type: 'input',
     message: 'Before we start, how could I call you?',
     default() {
@@ -16,5 +17,5 @@ export async function welcomeMenu() {
     },
   });
 
-  player = new Player(answers.player_name);
+  player = new Player(playerPrompt.name.trim());
 }
