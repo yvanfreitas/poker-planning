@@ -1,6 +1,10 @@
 import { createWithState } from '../domain/game.js';
+import { mainMenu } from './main-menu.js';
+import { gameMenu } from './game-menu.js';
 
 export default class ClientEvents {
+  eventsQueue = [];
+
   constructor() {
     socket.on('request-state', (data) => {
       let requester = data.player;
@@ -49,63 +53,84 @@ export default class ClientEvents {
     });
   }
   emitGameJoin() {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `game-join`,
       data: { player: player, gameId: game.state.id },
     });
   }
   emitRequestState(gameId) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `request-state`,
       data: { player: player, gameId: gameId },
     });
   }
   emitState(requester) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `game-state`,
       data: { requester: requester, player: player, state: game.getState() },
     });
   }
   emitCardCreate(card) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `card-create`,
       data: { card: card },
     });
   }
   emitCardDelete(cardTitle) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `card-delete`,
       data: { cardTitle: cardTitle },
     });
   }
   emitCardVote(card, vote) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `card-vote`,
       data: { card: card, vote: vote },
     });
   }
   emitCardReveal(card) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `card-reveal`,
       data: { card: card },
     });
   }
   emitCardReset(card) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `card-reset`,
       data: { card: card },
     });
   }
   emitCardSelect(cardTitle) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `card-select`,
       data: { cardTitle: cardTitle },
     });
   }
   emitPlayerDelete(playerName) {
-    socket.emit('game-input', {
+    this.addToQueue({
       event: `player-delete`,
       data: { playerName: playerName },
     });
+  }
+  addToQueue(event) {
+    this.eventsQueue.push(event);
+    this.processQueue();
+  }
+  processQueue() {
+    if (!socket.connected) return;
+
+    let eventsToProcess = this.eventsQueue;
+
+    this.eventsQueue.forEach((event) => {
+      socket.emit('game-input', event);
+      eventsToProcess.splice(eventsToProcess.indexOf(event), 1);
+    });
+
+    this.eventsQueue = eventsToProcess;
+  }
+
+  async refreshIfIsPossible() {
+    if (currentScreen == 'mainMenu') await mainMenu();
+    if (currentScreen == 'gameMenu') await gameMenu();
   }
 }
