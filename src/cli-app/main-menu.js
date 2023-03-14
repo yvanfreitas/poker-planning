@@ -7,6 +7,7 @@ import Game from '../domain/game.js';
 import Open from 'open';
 
 export async function mainMenu() {
+  currentScreen = 'mainMenu';
   if (game) return;
   await gameRender.render(game);
   const answers = await inquirer.prompt({
@@ -30,8 +31,9 @@ export async function mainMenu() {
 }
 
 async function gameCreate() {
+  currentScreen = 'gameCreate';
   await gameRender.render(game);
-  const settings = await inquirer.prompt([
+  const gamePrompt = await inquirer.prompt([
     {
       name: 'name',
       type: 'input',
@@ -46,9 +48,18 @@ async function gameCreate() {
   ]);
 
   const spinner = createSpinner('Creating the game...').start();
-  game = new Game(settings.name, settings.scale);
+  game = new Game(gamePrompt.name.trim(), gamePrompt.scale);
   clientEvents.emitGameJoin();
-  await sleep(1000);
+
+  let playerLogged = false;
+  while (!playerLogged) {
+    if (connectionLoss) return (connectionLoss = false);
+    game.state.players.forEach((gamePlayer) => {
+      if (gamePlayer.id == player.id) playerLogged = true;
+    });
+    await sleep(500);
+  }
+
   spinner.success({ text: `Game created!` });
   await sleep(1000);
 
@@ -56,19 +67,33 @@ async function gameCreate() {
 }
 
 async function gameJoin() {
+  currentScreen = 'gameJoin';
   await gameRender.render(game);
-  const answers = await inquirer.prompt({
+  const joinPrompt = await inquirer.prompt({
     name: 'gameId',
     type: 'input',
     message: 'What is the game id?',
   });
-  clientEvents.emitRequestState(answers.gameId);
 
   const spinner = createSpinner('Waiting for game host to accept your request...').start();
+  clientEvents.emitRequestState(joinPrompt.gameId.trim());
+
   while (game == null) {
-    await sleep(1000);
+    if (connectionLoss) return (connectionLoss = false);
+    await sleep(500);
   }
+
   clientEvents.emitGameJoin();
+
+  let playerLogged = false;
+  while (!playerLogged) {
+    if (connectionLoss) return (connectionLoss = false);
+    game.state.players.forEach((gamePlayer) => {
+      if (gamePlayer.id == player.id) playerLogged = true;
+    });
+    await sleep(500);
+  }
+
   spinner.success({ text: `Request accepted!` });
   await sleep(1000);
 
@@ -76,6 +101,7 @@ async function gameJoin() {
 }
 
 async function buyMeACoffee() {
+  currentScreen = 'buyMeACoffee';
   await gameRender.render(game);
   const spinner = createSpinner('Thank you for contribute. Opening browser...').start();
   await sleep(1200);
