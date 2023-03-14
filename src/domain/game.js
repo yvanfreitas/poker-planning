@@ -39,6 +39,10 @@ export default class Game {
   listPlayers() {
     return this.state.players.map((card) => card.name);
   }
+  listPlayersExceptHost() {
+    let players = this.state.players.filter((player) => player.id != this.state.host.id);
+    return players.map((card) => card.name);
+  }
   selectCardByTitle(title) {
     let selectedCard = this.state.cards.filter((card) => card.title == title)[0];
     this.state.currentCard = selectedCard;
@@ -73,7 +77,6 @@ export default class Game {
     let card = this.state.cards.filter((card) => card.id == cardParam.id)[0];
     card.revealed = true;
   }
-
   reset(cardParam) {
     let card = this.state.cards.filter((card) => card.id == cardParam.id)[0];
     card.votes = [];
