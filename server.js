@@ -24,21 +24,19 @@ io.on('connection', (socket) => {
       registerPlayer(socket.id, payload.data?.gameId);
     }
     const gameId = players[socket.id];
-    const event = payload.event;
-    const data = payload.data;
-    broadcastEventToPlayers(gameId, event, data);
+    broadcastEventToPlayers(gameId, payload);
   });
 });
 
-async function broadcastEventToPlayers(gameId, event, data) {
+async function broadcastEventToPlayers(gameId, payload) {
   games[gameId]?.forEach((socketId) => {
-    emit(socketId, event, data);
+    emit(socketId, payload);
   });
 }
 
-async function emit(socketId, event, data) {
-  console.log(`event emited ${socketId} ${event}`);
-  io.sockets.in(socketId).emit(event, data);
+async function emit(socketId, data) {
+  console.log(`event emited ${socketId} ${data}`);
+  io.sockets.in(socketId).emit('game-input', data);
 }
 
 function registerPlayer(socketId, gameId) {
