@@ -248,10 +248,10 @@ function listGameMenuOptions() {
 
   if (game.isHost(player)) {
     choices.push('Create a card');
-    choices.push('Delete a card');
   }
 
   if (game.getCardsCount() > 0 && game.isHost(player)) {
+    choices.push('Delete a card');
     choices.push('Pick a card');
   }
 
