@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import EventsHandler from './events-handler.js';
 export default class Game {
   state = {
     id: '',
@@ -9,11 +10,13 @@ export default class Game {
     cards: [],
     currentCard: null,
   };
+  eventsHandler;
 
   constructor(name, scale) {
     this.state.id = uuidv4();
     this.state.name = name;
     this.state.scale = scale;
+    this.eventsHandler = new EventsHandler(this);
   }
   join(player) {
     if (this.state.players.length < 1) this.state.host = player;
@@ -81,6 +84,16 @@ export default class Game {
     let card = this.state.cards.filter((card) => card.id == cardParam.id)[0];
     card.votes = [];
     card.revealed = false;
+  }
+  isCardCreated(cardParam) {
+    const matchedCards = this.state.cards.filter(
+      (card) => card.description == cardParam.description && card.title == cardParam.title,
+    );
+    if (matchedCards.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 

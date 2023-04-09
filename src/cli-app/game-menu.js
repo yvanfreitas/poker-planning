@@ -1,22 +1,22 @@
 import inquirer from 'inquirer';
 import { createSpinner } from 'nanospinner';
 import { sleep } from '../domain/utils.js';
+import Event from '../domain/event.js';
 
 import Card from '../domain/card.js';
 import Vote from '../domain/vote.js';
 
 export async function gameMenu() {
   if (!game) return;
-  currentScreen = 'gameMenu';
   await gameRender.render(game);
-  const answers = await inquirer.prompt({
+  prompter = await inquirer.prompt({
     name: 'game',
     type: 'list',
     message: 'Game Menu',
     choices: listGameMenuOptions(),
   });
 
-  switch (answers.game) {
+  switch (prompter.game) {
     case 'Create a card':
       await cardCreate();
       break;
@@ -47,9 +47,8 @@ export async function gameMenu() {
 }
 
 async function cardCreate() {
-  currentScreen = 'cardCreate';
   await gameRender.render(game);
-  const cardPrompt = await inquirer.prompt([
+  prompter = await inquirer.prompt([
     {
       name: 'title',
       type: 'input',
@@ -62,58 +61,53 @@ async function cardCreate() {
     },
   ]);
 
-  const spinner = createSpinner('Creating the card...').start();
-  const card = new Card(cardPrompt.title.trim(), cardPrompt.description.trim());
-  clientEvents.emitCardCreate(card);
+  console.log('Creating the card...');
+  const card = new Card(prompter.title.trim(), prompter.description.trim());
 
-  let cardCreated = false;
-  while (!cardCreated) {
-    if (connectionLoss) return (connectionLoss = false);
-    game.state.cards.forEach((gameCard) => {
-      if (gameCard.title == card.title && gameCard.description == card.description)
-        cardCreated = true;
-    });
+  const event = new Event(`card-create`, { card: card });
+  game.eventsHandler.enqueueToEmit(event);
+
+  while (!game.isCardCreated(card)) {
     await sleep(200);
   }
 
-  spinner.success({ text: `Card created!` });
+  console.log(`Card created!`);
   await sleep(1000);
 
   return;
 }
 
 async function cardDelete() {
-  currentScreen = 'cardDelete';
   await gameRender.render(game);
 
-  const answers = await inquirer.prompt({
+  prompter = await inquirer.prompt({
     name: 'cardTitle',
     type: 'list',
     message: 'Select a card to delete',
     choices: game.listCards(),
   });
 
-  const spinner = createSpinner('Deleting the card...').start();
-  clientEvents.emitCardDelete(answers.cardTitle);
+  console.log('Deleting the card...');
+  const event = new Event(`card-delete`, { cardTitle: prompter.cardTitle });
+  game.eventsHandler.enqueueToEmit(event);
 
   let cardDeleted = false;
   while (!cardDeleted) {
     if (connectionLoss) return (connectionLoss = false);
     cardDeleted = true;
     game.state.cards.forEach((card) => {
-      if (card.title == answers.cardTitle) cardDeleted = false;
+      if (card.title == prompter.cardTitle) cardDeleted = false;
     });
     await sleep(200);
   }
 
-  spinner.success({ text: `Card deleted!` });
+  console.log(`Card deleted!`);
   await sleep(1000);
 
   return;
 }
 
 async function cardVote() {
-  currentScreen = 'cardVote';
   await gameRender.render(game);
   const voteScale = game.getScale();
   const card = game.getCurrentCard();
@@ -125,9 +119,11 @@ async function cardVote() {
     choices: voteScale,
   });
 
-  const spinner = createSpinner('Voting...').start();
+  console.log('Voting...');
   let vote = new Vote(player, voting.vote);
-  clientEvents.emitCardVote(card, vote);
+
+  const event = new Event(`card-vote`, { card: card, vote: vote });
+  game.eventsHandler.enqueueToEmit(event);
 
   let voted = false;
   while (!voted) {
@@ -138,23 +134,23 @@ async function cardVote() {
     await sleep(200);
   }
 
-  spinner.success({ text: `Vote saved!` });
+  console.log(`Vote saved!`);
   return;
 }
 
 async function cardReveal() {
-  currentScreen = 'cardReveal';
   await gameRender.render(game);
   const card = game.getCurrentCard();
 
-  const answers = await inquirer.prompt({
+  prompter = await inquirer.prompt({
     name: 'reveal',
     type: 'confirm',
     message: 'Reveal the card voting?',
   });
 
-  const spinner = createSpinner('Revealing votes...').start();
-  if (answers.reveal) clientEvents.emitCardReveal(card);
+  console.log('Revealing votes...');
+  const event = new Event(`card-reveal`, { card: card });
+  if (prompter.reveal) game.eventsHandler.enqueueToEmit(event);
 
   let revealed = false;
   while (!revealed) {
@@ -163,23 +159,23 @@ async function cardReveal() {
     await sleep(200);
   }
 
-  spinner.success({ text: `Votes revealed!` });
+  console.log(`Votes revealed!`);
   return;
 }
 
 async function cardReset() {
-  currentScreen = 'cardReset';
   await gameRender.render(game);
   const card = game.getCurrentCard();
 
-  const answers = await inquirer.prompt({
+  prompter = await inquirer.prompt({
     name: 'reset',
     type: 'confirm',
     message: 'Do you really want to reset the card voting?',
   });
 
-  const spinner = createSpinner('Reseting card...').start();
-  if (answers.reset) clientEvents.emitCardReset(card);
+  console.log('Reseting card...');
+  const event = new Event(`card-reset`, { card: card });
+  if (prompter.reset) game.eventsHandler.enqueueToEmit(event);
 
   let reset = false;
   while (!reset) {
@@ -188,38 +184,36 @@ async function cardReset() {
     await sleep(200);
   }
 
-  spinner.success({ text: `Card reseted!` });
-
+  console.log(`Card reseted!`);
   return;
 }
 
 async function cardSelect() {
-  currentScreen = 'cardSelect';
   await gameRender.render(game);
 
-  const answers = await inquirer.prompt({
+  prompter = await inquirer.prompt({
     name: 'cardTitle',
     type: 'list',
     message: 'Select a card to vote',
     choices: game.listCards(),
   });
 
-  const spinner = createSpinner('Selecting card...').start();
-  clientEvents.emitCardSelect(answers.cardTitle);
+  console.log('Selecting card...');
+  const event = new Event(`card-select`, { cardTitle: prompter.cardTitle });
+  game.eventsHandler.enqueueToEmit(event);
 
   let selected = false;
   while (!selected) {
     if (connectionLoss) return (connectionLoss = false);
-    if (game.state.currentCard?.title == answers.cardTitle) selected = true;
+    if (game.state.currentCard?.title == prompter.cardTitle) selected = true;
     await sleep(200);
   }
 
-  spinner.success({ text: `Card selected!` });
+  console.log(`Card selected!`);
   return;
 }
 
 async function playerDelete() {
-  currentScreen = 'playerDelete';
   await gameRender.render(game);
 
   const playerPrompt = await inquirer.prompt({
@@ -229,13 +223,13 @@ async function playerDelete() {
     choices: game.listPlayersExceptHost(),
   });
 
-  const spinner = createSpinner('Kicking player from the game...').start();
-  clientEvents.emitPlayerDelete(playerPrompt.name);
+  console.log('Kicking player from the game...');
+  const event = new Event(`player-delete`, { playerName: playerPrompt.name });
+  game.eventsHandler.enqueueToEmit(event);
 
-  let playerDeleted = false;
   await sleep(1000);
 
-  spinner.success({ text: `Player kicked!` });
+  console.log(`Player kicked!`);
   return;
 }
 

@@ -3,21 +3,23 @@ import { createSpinner } from 'nanospinner';
 import { fibonacci, powersOf2 } from '../domain/scales.js';
 import { sleep } from '../domain/utils.js';
 import Game from '../domain/game.js';
+import Event from '../domain/event.js';
+import EventsHandler from '../domain/events-handler.js';
 
 import Open from 'open';
 
 export async function mainMenu() {
-  currentScreen = 'mainMenu';
+  //currentScreen = 'mainMenu';
   if (game) return;
   await gameRender.render(game);
-  const answers = await inquirer.prompt({
+  prompter = await inquirer.prompt({
     name: 'menu',
     type: 'list',
     message: 'MENU',
     choices: ['Create a game', 'Join a game', new inquirer.Separator(), 'Buy me a coffee'],
   });
 
-  switch (answers.menu) {
+  switch (prompter.menu) {
     case 'Create a game':
       await gameCreate();
       break;
@@ -31,9 +33,8 @@ export async function mainMenu() {
 }
 
 async function gameCreate() {
-  currentScreen = 'gameCreate';
   await gameRender.render(game);
-  const gamePrompt = await inquirer.prompt([
+  prompter = await inquirer.prompt([
     {
       name: 'name',
       type: 'input',
@@ -47,9 +48,11 @@ async function gameCreate() {
     },
   ]);
 
-  const spinner = createSpinner('Creating the game...').start();
-  game = new Game(gamePrompt.name.trim(), gamePrompt.scale);
-  clientEvents.emitGameJoin();
+  console.log('Creating the game...');
+  game = new Game(prompter.name.trim(), prompter.scale);
+
+  const event = new Event('game-join', { player: player, gameId: game.state.id });
+  game.eventsHandler.enqueueToEmit(event);
 
   let playerLogged = false;
   while (!playerLogged) {
@@ -60,30 +63,32 @@ async function gameCreate() {
     await sleep(500);
   }
 
-  spinner.success({ text: `Game created!` });
+  console.log(`Game created!`);
   await sleep(1000);
 
   return;
 }
 
 async function gameJoin() {
-  currentScreen = 'gameJoin';
   await gameRender.render(game);
-  const joinPrompt = await inquirer.prompt({
+  prompter = await inquirer.prompt({
     name: 'gameId',
     type: 'input',
     message: 'What is the game id?',
   });
 
-  const spinner = createSpinner('Waiting for game host to accept your request...').start();
-  clientEvents.emitRequestState(joinPrompt.gameId.trim());
+  console.log('Waiting for game host to accept your request...');
+  let event = new Event(`request-state`, { player: player, gameId: prompter.gameId.trim() });
+
+  const eventsHandler = new EventsHandler();
+  eventsHandler.enqueueToEmit(event);
 
   while (game == null) {
-    if (connectionLoss) return (connectionLoss = false);
     await sleep(500);
   }
 
-  clientEvents.emitGameJoin();
+  event = new Event('game-join', { player: player, gameId: game.state.id });
+  game.eventsHandler.enqueueToEmit(event);
 
   let playerLogged = false;
   while (!playerLogged) {
@@ -94,18 +99,21 @@ async function gameJoin() {
     await sleep(500);
   }
 
-  spinner.success({ text: `Request accepted!` });
+  console.log(`Request accepted!`);
   await sleep(1000);
 
   return;
 }
 
 async function buyMeACoffee() {
-  currentScreen = 'buyMeACoffee';
   await gameRender.render(game);
-  const spinner = createSpinner('Thank you for contribute. Opening browser...').start();
+
+  console.log('Thank you for contribute. Opening browser...');
   await sleep(1200);
   Open('https://www.buymeacoffee.com/yvanfreitas');
-  spinner.success({ text: `Redirection to menu` });
+
+  console.log(`Redirection to menu`);
   await sleep(600);
+
+  return;
 }
