@@ -1,20 +1,15 @@
-import { createWithState } from '../domain/game.js';
+import EventsHandler from './events-handler.js';
 
 export default class EventsListener {
   constructor() {
+    const eventsHandler = new EventsHandler();
+
     socket.on('game-input', (data) => {
-      game?.eventsHandler.enqueueToEvents(data);
+      eventsHandler.enqueueToEvents(data);
     });
 
     socket.on('connect', () => {
-      game?.eventsHandler.emitQueue();
+      eventsHandler.emitQueue();
     });
-
-    /*socket.on('disconnect', () => {
-      console.clear();
-      console.log('Connection lost! Trying to reconnect!');
-      connectionLoss = true;
-      global.prompter = null;
-    });*/
   }
 }

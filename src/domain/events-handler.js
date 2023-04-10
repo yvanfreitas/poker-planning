@@ -29,7 +29,6 @@ export default class EventsHandler {
 
     eventsToProcess.forEach((event) => {
       event.process();
-      //eventsToProcess.splice(eventsToProcess.indexOf(event), 1);
     });
   }
 }

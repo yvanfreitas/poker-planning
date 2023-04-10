@@ -1,14 +1,17 @@
+import { createWithState } from './game.js';
 export default class Event {
   playerId;
   eventName;
   data;
   status;
+  gameId;
+
   constructor(eventName, data, event) {
     this.status = 'pending';
     this.playerId = player.id;
     this.eventName = eventName;
     this.data = data;
-
+    this.gameId = game?.state.id;
     if (event) {
       this.playerId = event.playerId;
       this.eventName = event.eventName;
@@ -17,6 +20,8 @@ export default class Event {
     }
   }
   process() {
+    //console.log('------- processing -------');
+    //console.log(this);
     switch (this.eventName) {
       case 'request-state':
         if (game?.isHost(player))
@@ -71,5 +76,7 @@ export default class Event {
   emit() {
     socket.emit('game-input', this);
     this.status = 'emitted';
+    //console.log('------- emiting-------');
+    //console.log(this);
   }
 }
