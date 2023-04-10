@@ -9,8 +9,7 @@ import EventsListener from './src/domain/events-listener.js';
 global.player = null;
 global.game = null;
 global.gameRender = new GameRender();
-//global.socket = io.connect('https://poker-planning-server.adaptable.app/', {
-global.socket = io.connect('http://localhost:6000/', {
+global.socket = io.connect('https://poker-planning-server.adaptable.app/', {
   reconnection: true,
   reconnectionDelay: 500,
   reconnectionAttempts: 500,
