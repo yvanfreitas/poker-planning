@@ -1,6 +1,6 @@
 {
   "name": "poker-planning",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "A Poker Planning ClI Application",
   "main": "server.js",
   "type": "module",
